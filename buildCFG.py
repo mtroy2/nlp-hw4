@@ -10,12 +10,14 @@ def main(t_file):
     unique =0  
     most_freq = 0
     sorted_rules = []
+    
     for parent_rule, child_rules in grammar.items():
         unique += len(child_rules.keys())
         for child_rule, count in child_rules.items():
             full_rule = parent_rule + ' -> ' + child_rule
-            sorted_rules.append((full_rule, count))
-            grammar[parent_rule][child_rule] = count / sum(child_rules.values())
+            prob = count / sum(child_rules.values())
+            grammar[parent_rule][child_rule] = prob
+            sorted_rules.append((full_rule, count, prob))
     sorted_rules = sorted( sorted_rules, key= lambda x: x[1])
     
     print("There are " + str(unique) + " unique rules in the grammar" )
@@ -24,6 +26,12 @@ def main(t_file):
     top_five = sorted_rules[0:5]
     for rule in top_five:
         print( rule[0] + " # " + str(rule[1] ))
+    sorted_rules = sorted( sorted_rules, key = lambda x: x[2])
+    sorted_rules.reverse()
+    top_five = sorted_rules[0:5]
+    print("Top five probable rules are: " )
+    for rule in top_five:
+        print( rule[0] + " # " + str(rule[2]))
 def traverse_tree(cur_node):
     cur_rule = cur_node.label
     if len(cur_node.children) == 2:
