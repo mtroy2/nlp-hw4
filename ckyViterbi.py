@@ -1,6 +1,8 @@
 from tree import *
 import os
 import numpy as np
+import time
+import matplotlib.pyplot as plt
 grammar = {}
 sorted_rules = []
 non_terms= []
@@ -12,7 +14,6 @@ def main():
     
     read_training()    
     unique_rules = convert_probs()
-    grammar_stats(unique_rules)
     prep_syms()
     parse_dev()
 def prep_syms():
@@ -25,11 +26,14 @@ def prep_syms():
        term_lookup[term ] = i 
     vocabulary = set(vocabulary)
 def parse_dev():
+    sentence_lengths = []
+    times = []
     global vocabulary
     dev_in = open(os.getcwd() + "/dev.strings")
     
     dev_lines = dev_in.readlines()
-    dev_parse = open('dev.parse', 'w')
+    dev_parse = open('dev.parses', 'w')
+    print("Output for first 5 lines of dev file:")
     for i,line in enumerate(dev_lines):
         line = line.rstrip()
         line = line.split()
@@ -37,10 +41,26 @@ def parse_dev():
         for j,word in enumerate(line):
             if word not in vocabulary:
                 line[j] = '<unk>' 
-        parse = cky_parse( line, dev_parse )
+        start_time = time.time()
+        parse,prob = cky_parse( line, dev_parse )
+        tot_time = time.time() - start_time
+        times.append(np.log(tot_time))
+        sentence_lengths.append(np.log(len(line)))
         dev_parse.write(parse)
         dev_parse.write('\n')
-   
+
+        if i < 5:
+            print("Line " + str(i) + '\n' + "parse: \n" + parse + "\nLog prob: " + str(prob))
+
+    plot(sentence_lengths, times)
+
+def plot(x,y):
+    x = np.array(x)
+    y = np.array(y)
+    plt.scatter(x,y)
+    plt.show()
+    weights = np.polyfit(x,y,1)
+    print("The best fit for this equation = " + str(round(weights[0],3)) + " log(x) - " +  str(round(weights[1],3))   )
 def cky_parse(line, out_file):
     global non_terms
     global grammar
@@ -52,7 +72,7 @@ def cky_parse(line, out_file):
     sen_length = len(line)
     neg_inf = -1 * np.inf
     if len(line) == 0:
-        return "()"
+        return "",""
     # fill best and back matricies
     for i in range(0,sen_length):
         best.append([0]*(sen_length+1))  
@@ -61,6 +81,7 @@ def cky_parse(line, out_file):
         for j in range(0,sen_length+1):
             best[i][j] = [neg_inf] * len(non_terms)
             back[i][j] = [0] * len(non_terms)
+
     # populate first diag
     # for each word in sentence
     for i in range(1, sen_length + 1):
@@ -97,11 +118,11 @@ def cky_parse(line, out_file):
     end_rule =back[0][sen_length][term_lookup['TOP']]
     # failed parse
     if end_rule == 0:
-        return ""
+        return "",""
     else:
         parse = print_tree(end_rule, 0,sen_length  , back)
        # print(parse)
-        return parse
+        return parse, best[0][sen_length][term_lookup['TOP']]
 
 def print_tree( X, i ,j,back):
 
@@ -128,21 +149,7 @@ def print_tree( X, i ,j,back):
        # print(")", end="")
         ret_string += ")"
         return ret_string
-def grammar_stats(unique):
-    global sorted_rules
-    sorted_rules = sorted( sorted_rules, key= lambda x: x[1])
-    print("There are " + str(unique) + " unique rules in the grammar" )
-    print("The top five rules are: ")
-    sorted_rules.reverse()
-    top_five = sorted_rules[0:5]
-    for rule in top_five:
-        print( rule[0] + " # " + str(rule[1] ))
-    sorted_rules = sorted( sorted_rules, key = lambda x: x[2])
-    sorted_rules.reverse()
-    top_five = sorted_rules[0:5]
-    print("Top five probable rules are: " )
-    for rule in top_five:
-        print( rule[0] + " # " + str(rule[2]))
+
 def convert_probs():
     global grammar
     global sorted_rules
