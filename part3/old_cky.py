@@ -21,8 +21,7 @@ class CkyViterbi(object):
         self.read_training()    
         unique_rules = self.convert_probs()
         self.prep_syms()
-        self.parse_dev()
-        self.parse_test()
+
     def prep_syms(self):
 
         self.non_terms = set(self.non_terms)
@@ -31,11 +30,11 @@ class CkyViterbi(object):
             self.term_lookup[term ] = i 
         self.vocabulary = set(self.vocabulary)
 
-    def parse_dev(self):
+    def parse_dev(self,out):
         sentence_lengths = []
         times = []
 
-        dev_parse = open('./part3/output/dev.parses', 'w')
+        dev_parse = open(out, 'w')
 
         for i,line in enumerate(self.dev_file):
             line = line.rstrip()
@@ -44,14 +43,15 @@ class CkyViterbi(object):
             for j,word in enumerate(line):
                 if word not in self.vocabulary:
                     line[j] = '<unk>' 
-
+          
             parse = self.cky_parse( line )
+            self.dev_parses.append(parse)
             dev_parse.write(parse)
             dev_parse.write('\n')
         
-    def parse_test(self):
+    def parse_test(self,out):
 
-        test_parse = open('./part3/output/test.parses', 'w')
+        test_parse = open(out, 'w')
 
         for i,line in enumerate(self.test_file):
             line = line.rstrip()
@@ -61,6 +61,7 @@ class CkyViterbi(object):
                     line[j] = '<unk>' 
             
             parse = self.cky_parse( line )
+            self.test_parses.append(parse)
             test_parse.write(parse)
             test_parse.write('\n')
         

@@ -5,47 +5,44 @@ import time
 from old_cky import CkyViterbi
 import sys
 class ImpCky(object):
-    def __init__(self,old_t_f,train_file, dev_file,test_file):
+    def __init__(self,train_file, dev_file,test_file):
         self.grammar = {}
         self.sorted_rules = []
         self.non_terms= []
         self.term_lookup = {}
         self.back = []
         self.vocabulary = []
+        self.dev_parses = []
+        self.test_parses = []
         self.train_file = train_file
         self.dev_file = dev_file
         self.test_file = test_file
-        old_cky = CkyViterbi(old_t_f,dev_file,test_file)
-        # preprocess normal train data
-        old_cky.main()
-        #postprocess outputted data
-        os.system("python ./part3/imp_postprocess.py ./part3/output/dev.parses > ./part3/output/dev.parses.post")
-        os.system("python ./part3/imp_postprocess.py ./part3/output/test.parses > ./part3/output/test.parses.post")
-        # read all old parses
-        old_cky.read_dev_parses()
-        old_cky.read_test_parses()
-        # store these parses in current model
-        self.dev_backup_parse = old_cky.dev_parses
-        self.test_backup_parse = old_cky.test_parses
+    def compose(self,model_1, model_2):
+        self.model_1 = model_1
+        self.model_2 = model_2
+    def sim_models(self):
+        self.model_1.parse_dev('./part3/output/dev.parses.horiz')
+        self.model_2.parse_dev('./part3/output/dev.parses.old')
+        self.model_1.parse_test('./part3/output/test.parses.horiz')
+        self.model_2.parse_test('./part3/output/test.parses.old')
     def main(self):
         
         self.read_training()  
         self.add_delta_smooth(delta=0.6)  
         unique_rules = self.convert_probs()
         self.prep_syms()
-        self.parse_dev()
-        self.parse_test()
+
     def prep_syms(self):
         self.non_terms = set(self.non_terms)
         self.non_terms = sorted(self.non_terms)
         for i, term in enumerate(self.non_terms):
            self.term_lookup[term ] = i 
         self.vocabulary = set(self.vocabulary)
-    def parse_dev(self):
+    def parse_dev(self,out_name):
         sentence_lengths = []
         times = []
         
-        dev_parse = open('./part3/output/dev.parses.imp', 'w')
+        dev_parse = open(out_name, 'w')
         
         for i,line in enumerate(self.dev_file):
             line = line.rstrip()
@@ -57,13 +54,13 @@ class ImpCky(object):
 
             parse= self.cky_parse( line , i )
             #print('\n' + parse + '\ni=' + str(i))
-
+            self.dev_parses.append(parse)
             dev_parse.write(parse)
             dev_parse.write('\n')
 
-    def parse_test(self):
+    def parse_test(self,out_name):
         sentence_lengths = []
-        dev_parse = open('./part3/output/test.parses.imp', 'w')
+        dev_parse = open(out_name, 'w')
         
         for i,line in enumerate(self.test_file):
             line = line.rstrip()
@@ -73,13 +70,47 @@ class ImpCky(object):
                 if word not in self.vocabulary:
                     line[j] = '<unk>' 
 
-            parse= self.cky_parse( line , i,'test' )
+            parse= self.cky_parse( line , i,)
+            self.test_parses.append(parse)
+
+
+            dev_parse.write(parse)
+            dev_parse.write('\n')
+    def sim_all_test(self):
+        test_parse = open('./part3/output/test.parses.vert', 'w')
+        
+        for i,line in enumerate(self.test_file):
+            line = line.rstrip()
+            line = line.split()
+       
+            for j,word in enumerate(line):
+                if word not in self.vocabulary:
+                    line[j] = '<unk>' 
+
+            parse= self.cky_parse( line , i,final='yes',version='test')
+            #print('\n' + parse + '\ni=' + str(i))
+
+            test_parse.write(parse)
+            test_parse.write('\n')
+    def sim_all_dev(self):
+ 
+        dev_parse = open('./part3/output/dev.parses.vert', 'w')
+        
+        for i,line in enumerate(self.dev_file):
+            line = line.rstrip()
+            line = line.split()
+       
+            for j,word in enumerate(line):
+                if word not in self.vocabulary:
+                    line[j] = '<unk>' 
+
+            parse= self.cky_parse( line , i ,final='yes',version='dev')
             #print('\n' + parse + '\ni=' + str(i))
 
             dev_parse.write(parse)
             dev_parse.write('\n')
 
-    def cky_parse(self,line, parse_index, fi='dev'):
+    def cky_parse(self,line, parse_index, final='no',version='dev'):
 
         # build matrix n by n by X
         best = []
@@ -131,10 +162,20 @@ class ImpCky(object):
 
         end_rule =self.back[0][sen_length][self.term_lookup['TOP']]
         # failed parse
-        if end_rule == 0 and fi =='dev':
-            return self.dev_backup_parse[parse_index].rstrip()
-        elif end_rule == 0 and fi == 'test':
-            return self.test_backup_parse[parse_index].rstrip()
+        if end_rule == 0 and final =='yes':
+            if version=='dev':
+                if self.model_1.dev_parses[parse_index] != "":
+                    return self.model_1.dev_parses[parse_index].rstrip()
+                else:
+                    return self.model_2.dev_parses[parse_index].rstrip()
+            else:
+                if self.model_1.test_parses[parse_index] != "":
+                    return self.model_1.test_parses[parse_index].rstrip()
+                else:
+                    return self.model_2.test_parses[parse_index].rstrip()
+
+        elif end_rule == 0 and final == 'no':
+            return ""
         else:
             parse = self.print_tree(end_rule, 0,sen_length )
             return parse
