@@ -236,11 +236,25 @@ class Tree(object):
             # if cur node has parent tag, we don't want to include that in child tag
             if mom_index != -1:
                 cur_rule = cur_rule[:mom_index]
-            cur_node.children[1].label +='[mom=' + cur_rule + '][prev=' + cur_node.children[0].label +']'
+            cur_node.children[1].label +='[mom=' + cur_rule + ']'
+            #cur_node.children[1].label +='[prev=' + cur_node.children[0].label +']'
             cur_node.children[0].label +='[mom=' + cur_rule + ']'
 
             for node in cur_node.children:
                 self._vert_markov(node)      
+    def horizontal_markov(self):
+        self._horiz_markov(self.root)
+
+    def _horiz_markov(self,cur_node):
+
+        if len(cur_node.children) == 2:
+
+            
+            cur_node.children[1].label +='[prev=' + cur_node.children[0].label +']'
+           
+
+            for node in cur_node.children:
+                self._horiz_markov(node)  
     def unlabel(self):
         self._unlabel(self.root)
     def _unlabel(self,cur_node):

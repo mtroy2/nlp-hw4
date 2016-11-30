@@ -11,7 +11,8 @@ from old_cky import CkyViterbi
 if __name__ == "__main__":
 
 
-    os.system("python ./part3/imp_preprocess.py ./shared/data/train.trees > ./part3/data/train.trees.pre.imp")
+    os.system("python ./part3/vert_preprocess.py ./shared/data/train.trees > ./part3/data/train.trees.pre.vert")
+    os.system("python ./part3/horiz_preprocess.py ./shared/data/train.trees > ./part3/data/train.trees.pre.horiz")
     os.system("python ./shared/scripts/preprocess.py ./shared/data/train.trees > ./part3/data/train.trees.pre")
     os.system("python ./shared/scripts/unknown.py ./part3/data/train.trees.pre > ./part3/data/train.trees.pre.unk")
     t_file = open(os.getcwd() + '/part3/data/train.trees.pre.imp')
