@@ -1,6 +1,16 @@
 nlp-hw4
 
-To run my code:
+Libraries required:
+    numpy
+    matplotlib
 
+To run my code:
+Individually:
 Part 1: 
     python buildCFG.py
+
+Part 2:
+    python ckyViterbi.py
+
+All together:
+    python run_everything.py

@@ -3,6 +3,7 @@ import os
 grammar = {}
 
 def main(t_file):    
+
     for line in t_file:
         t = Tree.from_str(line)
         traverse_tree(t.root)
@@ -29,7 +30,7 @@ def main(t_file):
     sorted_rules = sorted( sorted_rules, key = lambda x: x[2])
     sorted_rules.reverse()
     top_five = sorted_rules[0:5]
-    print("Top five probable rules are: " )
+    print("\nTop five probable rules are: " )
     for rule in top_five:
         print( rule[0] + " # " + str(rule[2]))
 def traverse_tree(cur_node):
@@ -61,5 +62,4 @@ def traverse_tree(cur_node):
 
 
 if __name__ == "__main__":
-    train_file = open(os.getcwd() + '/train.trees.pre.unk')
-    main(train_file)
+    main()

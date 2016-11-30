@@ -62,11 +62,8 @@ class Node(object):
             parent.delete_clean()
 
     def bottomup(self):
-        print(self.label)
-        print("hi")
         for child in self.children:
             for node in child.bottomup():
-                print (node.label)
                 yield node
         yield self
 
@@ -227,6 +224,34 @@ class Tree(object):
         roots = visit(self.root)
         assert len(roots) == 1
         self.root = roots[0]
+
+    def vertical_markov(self):
+        self._vert_markov(self.root)
+
+    def _vert_markov(self,cur_node):
+        cur_rule = cur_node.label
+
+        mom_index = cur_rule.find('[')
+        if len(cur_node.children) == 2:
+            # if cur node has parent tag, we don't want to include that in child tag
+            if mom_index != -1:
+                cur_rule = cur_rule[:mom_index]
+            cur_node.children[1].label +='[mom=' + cur_rule + '][prev=' + cur_node.children[0].label +']'
+            cur_node.children[0].label +='[mom=' + cur_rule + ']'
+
+            for node in cur_node.children:
+                self._vert_markov(node)      
+    def unlabel(self):
+        self._unlabel(self.root)
+    def _unlabel(self,cur_node):
+        mom_index = cur_node.label.find('[')
+        if mom_index != -1:
+            cur_node.label = cur_node.label[:mom_index]
+            
+        for node in cur_node.children:
+            self._unlabel(node)
+
+
 
 if __name__ == "__main__":
     import sys
